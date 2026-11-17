@@ -57,7 +57,7 @@ SECOND_NOTIFY_GROUP_ID = -5501225557   # dusra group (per-user generate report)
 ADMIN_IDS = [1364476174]               # e.g. [123456789]
 LINKS_PER_REFERRAL = 50      # default quota per referral (admin panel se badal sakta)
 MAX_LINKS_PER_RUN = 50       # ek click = itne links parallel, phir process RUK
-PARALLEL_WORKERS = 8         # 2 se zyada parallel = server 500 deta hai
+PARALLEL_WORKERS = 2         # 2 se zyada parallel = server 500 deta hai
 PLAN_ID = "CRUNCPCROAUG26"   # active offer planId (admin panel se badal sakta)
 PRODUCT_NAME = "CrunchyRoll 1 Month Link"   # notification me product line
 AMOUNT_TEXT = "50x"             # "Free" / "$0.70" ... khali = line skip
