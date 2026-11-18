@@ -15,15 +15,14 @@ links generate karte hain (unke apne jiocoupons account se).
   5) QUOTA      -> har user ko shuru me LINKS_PER_REFERRAL links milte hain.
                    Quota khatam = bot ruk jata hai aur REFERRAL link deta hai.
   6) ADMIN      -> admin panel: quota/refer, max links, planId, product, amount
-  7) NOTIFY     -> har batch pe DUSRA bot se:
-                   • Group 1 (admin): masked purchase message
-                   • Group 2 (-5501225557): per-user report + txt file
+  7) NOTIFY     -> har batch pe DUSRA bot se EK hi group me:
+                   (@crunchyroollLinksalert) masked message — sirf COUNTS.
+                   Links / TXT file group me KABHI nahi jaati (private hain).
 
 Setup — top wale constants bhar do:
   MAIN_BOT_TOKEN          -> users wala bot
-  NOTIFY_BOT_TOKEN        -> dono groups me report bhejne wala DUSRA bot
-  NOTIFY_GROUP_ID         -> group 1 (0 chhodo -> group me /id bhejo)
-  SECOND_NOTIFY_GROUP_ID  -> group 2 (-5501225557 set hai)
+  NOTIFY_BOT_TOKEN        -> group me report bhejne wala DUSRA bot
+  NOTIFY_GROUP_ID         -> EK hi group: @crunchyroollLinksalert
   ADMIN_IDS               -> apna telegram user id
   FORCE_CHANNELS          -> jin channels ka join zaroori hai
   PROXY                   -> "http://user:pass@host:port" ya khali = direct
@@ -51,9 +50,9 @@ except ImportError:
 
 # ━━━━━━━━━━━━━ SETTINGS (yahi bhar na) ━━━━━━━━━━━━━
 MAIN_BOT_TOKEN = "9269553305:AAGAjje3dkdHSGZeHt2UboOtn_H0pIPJPyw"          # users wala bot
-NOTIFY_BOT_TOKEN = "9227155375:AAFXcMS26IaiPTLJKeEp11GBFBkc3HrG0u8"        # dusra bot -> dono notification groups
-NOTIFY_GROUP_ID = -5501225557          # 0 chhodo -> admin group me /id bhejo, auto-set
-SECOND_NOTIFY_GROUP_ID = -5501225557   # dusra group (per-user generate report)
+NOTIFY_BOT_TOKEN = "9227155375:AAFXcMS26IaiPTLJKeEp11GBFBkc3HrG0u8"        # dusra bot -> notification group
+NOTIFY_GROUP_ID = -1004427278466   # EK HI group: Crunchyrooll Links (@crunchyroollLinksalert)
+SECOND_NOTIFY_GROUP_ID = -1004427278466  # (koi dusra group nahi — same hi)
 ADMIN_IDS = [1364476174]               # e.g. [123456789]
 LINKS_PER_REFERRAL = 50      # default quota per referral (admin panel se badal sakta)
 MAX_LINKS_PER_RUN = 50       # ek click = itne links parallel, phir process RUK
@@ -188,11 +187,12 @@ def ref_link(uid):
 
 
 def gid_main():
-    return s_get("notify_group", 0) or NOTIFY_GROUP_ID
+    # constant pehle — top me set group hi hamesha chalega
+    return NOTIFY_GROUP_ID or s_get("notify_group", 0)
 
 
 def gid_second():
-    return s_get("second_group", 0) or SECOND_NOTIFY_GROUP_ID
+    return SECOND_NOTIFY_GROUP_ID or s_get("second_group", 0)
 
 
 def ch_label(ch):
@@ -557,16 +557,12 @@ def main_kb(uid):
 def admin_kb():
     return [
         [{"text": "📊 Stats", "callback_data": "a_stats"},
-         {"text": "👥 Top Users", "callback_data": "a_users"}],
-        [{"text": f"⚙️ Quota/Refer: {s_get('quota_per_ref', LINKS_PER_REFERRAL)}",
-          "callback_data": "a_setquota"},
-         {"text": f"🔢 Max/run: {s_get('max_links', MAX_LINKS_PER_RUN)}",
-          "callback_data": "a_setmax"}],
-        [{"text": f"🎯 PlanId: {str(s_get('plan_id', PLAN_ID))[:10]}…",
-          "callback_data": "a_setplan"},
-         {"text": f"🏷 Product: {str(s_get('product', PRODUCT_NAME))[:12]}…",
-          "callback_data": "a_setprod"}],
-        [{"text": "💵 Amount", "callback_data": "a_setamount"},
+         {"text": "👥 Sab Users (links)", "callback_data": "a_users"}],
+        [{"text": "⚙️ Quota/Refer set", "callback_data": "a_setquota"},
+         {"text": "🔢 Max/run set", "callback_data": "a_setmax"}],
+        [{"text": "🎯 PlanId set", "callback_data": "a_setplan"},
+         {"text": "🏷 Product set", "callback_data": "a_setprod"}],
+        [{"text": "💵 Amount set", "callback_data": "a_setamount"},
          {"text": "➕ Quota Do (user)", "callback_data": "a_addq"}],
         [{"text": "⬅️ Menu", "callback_data": "back"}],
     ]
@@ -579,7 +575,22 @@ def notify_text(name, product, amount, qty=1):
          f"0️⃣ QTY: {qty}\n")
     if amount:
         t += f"💵 Amount: {esc(amount)}\n"
-    t += "\n⚡ Auto-delivered via Bot API!"
+    t += "\n⚡ Crunchyrooll Links Alert"
+    return t
+
+
+def batch_notify_text(name, product, amount, ok_n, fail_n, used, total):
+    """Group notification — sirf MASKED naam + counts.
+    Koi link / TXT / mobile / UID yahan NAHI (links private hain)."""
+    t = ("🔗 <b>New Link Generated!</b> 🚀\n\n"
+         f"😀 User: {esc(mask_name(name or 'User'))}\n"
+         f"📦 Product: {esc(product)}\n"
+         f"✅ Links: <b>{ok_n}</b>\n"
+         f"❌ Fail: {fail_n}\n"
+         f"💰 Quota: {used}/{total}\n")
+    if amount:
+        t += f"💵 Amount: {esc(amount)}\n"
+    t += "\n⚡ Crunchyrooll Links Alert"
     return t
 
 
@@ -670,34 +681,49 @@ def screen_help(uid):
 
 
 def screen_admin(uid):
-    n_users = len(DB["users"])
-    total = DB["stats"].get("links", 0)
-    logged = sum(1 for u in DB["users"].values() if u.get("token"))
+    """Panel home — sirf 2 stats. Group ID / settings values KABHI nahi."""
     send_msg(uid,
              "🛠 <b>Admin Panel</b>\n\n"
-             f"👥 Users: {n_users} | 🔑 Logged: {logged}\n"
-             f"🔗 Total links nikaale: {total}\n"
-             f"⚙️ Quota/refer: {s_get('quota_per_ref', LINKS_PER_REFERRAL)}\n"
-             f"🔢 Max links/run: {s_get('max_links', MAX_LINKS_PER_RUN)}\n"
-             f"🎯 PlanId: {s_get('plan_id', PLAN_ID)}\n"
-             f"🏷 Product: {s_get('product', PRODUCT_NAME)}\n"
-             f"💵 Amount: {s_get('amount', AMOUNT_TEXT) or '(khali)'}\n"
-             f"📢 Group 1: {gid_main() or 'set nahi (/id bhejo group me)'}\n"
-             f"📢 Group 2: {gid_second() or 'set nahi (/id2 bhejo group me)'}",
+             f"🔗 Total links generated: <b>{DB['stats'].get('links', 0)}</b>\n"
+             f"👥 Total users: <b>{len(DB['users'])}</b>",
              admin_kb())
 
 
+def screen_stats(uid):
+    """Stats — bilkul sirf 2 number: kitne links, kitne users."""
+    send_msg(uid,
+             "📊 <b>Stats</b>\n\n"
+             f"🔗 Total links generated: <b>{DB['stats'].get('links', 0)}</b>\n"
+             f"👥 Total users: <b>{len(DB['users'])}</b>",
+             [[{"text": "⬅️ Panel", "callback_data": "admin"}]])
+
+
 def screen_admin_users(uid):
+    """HAR user ka link count — koi limit nahi. Lambi list = tod ke messages."""
     us = sorted(DB["users"].items(), key=lambda kv: kv[1].get("quota_used", 0),
-                reverse=True)[:20]
+                reverse=True)
     if not us:
-        return send_msg(uid, "👥 Abhi koi user nahi.", [[{"text": "⬅️ Panel", "callback_data": "admin"}]])
-    lines = ["👥 <b>Top Users (links nikale)</b>\n"]
+        return send_msg(uid, "👥 Abhi koi user nahi.",
+                        [[{"text": "⬅️ Panel", "callback_data": "admin"}]])
+    lines = []
     for i, (uid_s, u) in enumerate(us, 1):
-        nm = mask_name(u.get("name") or u.get("mobile") or "User")
-        lines.append(f"{i}. {nm} — {u.get('quota_used', 0)} links "
-                     f"(refs {u.get('refs', 0)})")
-    send_msg(uid, "\n".join(lines), [[{"text": "⬅️ Panel", "callback_data": "admin"}]])
+        nm = esc((u.get("name") or "User").replace("\n", " ").replace("\r", " ")[:24])
+        lines.append(f"{i}. {nm} (<code>{uid_s}</code>) — "
+                     f"<b>{u.get('quota_used', 0)}</b> links")
+    # Telegram 4096 limit ke hisaab se messages tod do
+    header = "👥 <b>Sab Users — links generated</b>\n\n"
+    chunks, cur = [], header
+    for ln in lines:
+        if len(cur) + len(ln) + 2 > 3900:
+            chunks.append(cur)
+            cur = ln + "\n"
+        else:
+            cur += ln + "\n"
+    chunks.append(cur)
+    for i, c in enumerate(chunks):
+        kb = ([[{"text": "⬅️ Panel", "callback_data": "admin"}]]
+              if i == len(chunks) - 1 else None)
+        send_msg(uid, c, kb)
 
 
 # ━━━━━━━━━━━━━ ACTIONS ━━━━━━━━━━━━━
@@ -865,17 +891,11 @@ def _gen_worker(uid, count, token, plan_id):
                     for j, p in enumerate(part, 1))
                 send_msg(uid, f"🔗 <b>Links {i + 1}-{i + len(part)}</b>\n\n{body}")
 
-    # ---- group 1 (masked purchase style) ----
+    # ---- EK hi group: sirf COUNTS. Links/TXT group me KABHI nahi (private) ----
     if ok:
-        notify_group(notify_text(name_s or mobile_s or "User", prod, amt, len(ok)))
-
-    # ---- group 2 (per-user generate report + txt) ----
-    if ok:
-        snap = {"name": name_s, "mobile": mobile_s,
-                "quota_used": used_s, "quota_total": total_s}
-        notify_second(second_group_text(uid, snap, len(ok), fail_n),
-                      txt_path if SECOND_GROUP_FILE else None,
-                      f"📄 {esc(mask_name(name_s or 'User'))} — {len(ok)} links")
+        notify_send(gid_main(),
+                    batch_notify_text(name_s, prod, amt, len(ok), fail_n,
+                                      used_s, total_s))
 
     # ---- final message ----
     if ok:
@@ -1045,7 +1065,10 @@ def handle_text(msg):
         list_notify_chats(uid)
         return
 
-    if text == "/start":
+    # /start [REFxxxx] — referral deep link bhi yahin (BUG FIX:
+    # pehle sirf exact "/start" match hota tha, "/start REF123" kahin
+    # aur chala jaata tha — isliye referral count hi nahi hota tha)
+    if text == "/start" or text.startswith("/start ") or re.match(r"^/start@\w+", text):
         handle_start(msg)
         return
 
@@ -1188,7 +1211,7 @@ def handle_cb(cb):
     elif data == "admin" and is_admin(uid):
         screen_admin(uid)
     elif data == "a_stats" and is_admin(uid):
-        screen_admin(uid)
+        screen_stats(uid)
     elif data == "a_users" and is_admin(uid):
         screen_admin_users(uid)
     elif data == "a_setquota" and is_admin(uid):
@@ -1287,15 +1310,7 @@ def main():
         print(f"[+] Force join: {FORCE_CHANNELS}")
         check_force_channels()
 
-    if gid_main():
-        print(f"[+] Notify group 1: {gid_main()}")
-    else:
-        print("[!] Group 1 set nahi — group me /id bhejo.")
-
-    if gid_second():
-        print(f"[+] Notify group 2: {gid_second()}")
-    else:
-        print("[!] Group 2 set nahi — group me /id2 bhejo.")
+    print(f"[+] Notify group (single): {gid_main() or 'set nahi'}")
 
     if not NOTIFY_BOT_TOKEN:
         print("[!] NOTIFY_BOT_TOKEN khali — group notifications nahi jayenge.")
