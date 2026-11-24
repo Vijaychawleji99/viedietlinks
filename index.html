@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#080b14">
+<title>FluxProxy — India Proxy Vault</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080b14;
+    --card:rgba(255,255,255,.055);
+    --card-strong:rgba(255,255,255,.085);
+    --border:rgba(255,255,255,.10);
+    --text:#eef2ff;
+    --muted:#8790ab;
+    --accent:#5eead4;
+    --accent2:#818cf8;
+    --green:#34d399;
+    --red:#fb7185;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;min-height:100%}
+  body{
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--text);overflow-x:hidden;padding-bottom:36px;
+  }
+  .bg-glow{
+    position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(680px 380px at 12% -5%, rgba(94,234,212,.16), transparent 70%),
+      radial-gradient(620px 420px at 95% 8%, rgba(129,140,248,.18), transparent 70%),
+      radial-gradient(520px 380px at 50% 100%, rgba(251,113,133,.08), transparent 70%);
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:18px 16px 0}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{
+    width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:19px;
+    background:linear-gradient(135deg,#5eead4,#818cf8);
+    box-shadow:0 6px 22px rgba(94,234,212,.28);
+  }
+  .brand-name{font-weight:800;font-size:16px;letter-spacing:-.3px}
+  .brand-sub{font-size:10.5px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin-top:2px}
+  .online-chip{
+    display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;
+    background:var(--card);border:1px solid var(--border);font-size:10.5px;font-weight:700;
+    letter-spacing:.4px;text-transform:uppercase;
+  }
+  .online-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+
+  .hero{margin-bottom:18px}
+  .hero h1{font-size:27px;line-height:1.15;margin:0 0 8px;letter-spacing:-1px;font-weight:800}
+  .hero h1 span{background:linear-gradient(90deg,#5eead4,#818cf8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;margin-bottom:14px;backdrop-filter:blur(18px);
+    box-shadow:0 10px 34px rgba(0,0,0,.22);
+    animation:rise .45s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .card-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;margin-bottom:14px}
+  .card-title .ico{font-size:17px}
+
+  .status-row{display:flex;align-items:center;gap:14px}
+  .ring{position:relative;width:74px;height:74px;flex:0 0 auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:7}
+  .ring .track{stroke:rgba(255,255,255,.09)}
+  .ring .prog{stroke:url(#grad);stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+  .ring-label{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .ring-label b{font-size:15px;line-height:1;display:block}
+  .ring-label small{font-size:9px;color:var(--muted);letter-spacing:.4px}
+  .status-info{flex:1;min-width:0}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:5px 10px;border-radius:999px;margin-bottom:7px}
+  .badge.live{background:rgba(52,211,153,.13);color:var(--green);border:1px solid rgba(52,211,153,.25)}
+  .badge.dead{background:rgba(251,113,133,.13);color:var(--red);border:1px solid rgba(251,113,133,.25)}
+  .badge .pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
+  @keyframes pulse{50%{opacity:.35;transform:scale(.8)}}
+  .status-info .key-str{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:rgba(0,0,0,.28);padding:7px 10px;border-radius:9px;border:1px solid var(--border);word-break:break-all}
+  .status-info .hint{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5}
+
+  .field-label{font-size:10.5px;color:var(--muted);font-weight:700;letter-spacing:.6px;margin-bottom:8px;display:block;text-transform:uppercase}
+  .input{
+    width:100%;padding:14px;border-radius:13px;background:rgba(0,0,0,.30);
+    border:1.5px solid var(--border);color:var(--text);font-size:14px;outline:none;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;transition:.2s;
+  }
+  .input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(94,234,212,.10)}
+  .input::placeholder{color:#5c6580}
+  .btn{
+    width:100%;border:0;border-radius:13px;padding:14px;font-size:14px;font-weight:700;
+    cursor:pointer;transition:transform .15s,opacity .2s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn:active{transform:scale(.975)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-primary{
+    background:linear-gradient(100deg,#5eead4,#7dd3fc 45%,#818cf8);
+    color:#08111c;box-shadow:0 8px 24px rgba(94,234,212,.25);margin-top:12px;
+  }
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .chip{
+    padding:8px 13px;border-radius:10px;background:rgba(255,255,255,.05);
+    border:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.4px;
+    color:var(--muted);cursor:pointer;transition:.18s;
+  }
+  .chip.active{
+    background:linear-gradient(135deg,rgba(94,234,212,.20),rgba(129,140,248,.20));
+    color:var(--text);border-color:rgba(94,234,212,.45);
+  }
+  .range-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+  .range-head .val{font-weight:800;color:var(--accent);font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+
+  .proxy-head{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 12px}
+  .proxy-head h2{font-size:15px;margin:0;font-weight:800}
+  .copy-all{font-size:11px;font-weight:700;color:var(--accent);background:none;border:0;cursor:pointer}
+  .proxy-item{
+    display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;padding:11px 12px;margin-bottom:8px;animation:rise .3s both;
+  }
+  .proto{
+    font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+    padding:5px 7px;border-radius:7px;min-width:46px;text-align:center;
+  }
+  .proto.http{background:rgba(94,234,212,.14);color:#5eead4}
+  .proto.https{background:rgba(129,140,248,.16);color:#a5b4fc}
+  .proto.socks4,.proto.socks5{background:rgba(251,191,36,.14);color:#fbbf24}
+  .p-state{
+    font-size:9px;font-weight:800;letter-spacing:.5px;padding:4px 6px;border-radius:6px;
+    min-width:52px;text-align:center;
+  }
+  .p-state.working{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.30)}
+  .p-state.dead{background:rgba(251,113,133,.15);color:#fb7185;border:1px solid rgba(251,113,133,.30)}
+  .tier{font-size:9px;font-weight:800;letter-spacing:.4px;padding:2px 5px;border-radius:5px;margin-right:4px}
+  .tier.turbo{background:rgba(250,204,21,.14);color:#facc15;border:1px solid rgba(250,204,21,.30)}
+  .tier.fast{background:rgba(52,211,153,.14);color:#34d399;border:1px solid rgba(52,211,153,.30)}
+  .tier.ok{background:rgba(96,165,250,.14);color:#60a5fa;border:1px solid rgba(96,165,250,.30)}
+  .tier.slow{background:rgba(148,163,184,.14);color:#94a3b8;border:1px solid rgba(148,163,184,.30)}
+  .p-main{flex:1;min-width:0}
+  .p-addr{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .p-meta{font-size:10px;color:var(--muted);margin-top:3px}
+  .p-copy{
+    width:32px;height:32px;flex:0 0 auto;border-radius:9px;border:1px solid var(--border);
+    background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;font-size:14px;
+    display:grid;place-items:center;transition:.15s;
+  }
+  .p-copy:active{transform:scale(.9);background:var(--accent);color:#08111c}
+  .empty{text-align:center;padding:30px 16px;color:var(--muted);font-size:12.5px;line-height:1.7}
+  .empty .big{font-size:30px;margin-bottom:8px}
+
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:99;opacity:0;transition:.28s;pointer-events:none;width:max-content;max-width:88%}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast-inner{background:#1b2233;border:1px solid var(--border);padding:11px 16px;border-radius:12px;font-size:12.5px;font-weight:600;box-shadow:0 12px 34px rgba(0,0,0,.5)}
+  .spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(8,17,28,.3);border-top-color:#08111c;animation:spin .7s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .scan{height:3px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.08);margin-top:14px;display:none}
+  .scan.on{display:block}
+  .scan i{display:block;height:100%;width:35%;background:linear-gradient(90deg,transparent,#5eead4,transparent);animation:scan 1.1s ease-in-out infinite}
+  @keyframes scan{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+  .hidden{display:none!important}
+  .footer{text-align:center;color:#4b5470;font-size:10.5px;margin-top:22px;letter-spacing:.3px}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">FI</div>
+      <div>
+        <div class="brand-name">FluxProxy</div>
+        <div class="brand-sub">India · Free · Live</div>
+      </div>
+    </div>
+    <div class="online-chip"><span class="dot"></span>Service online</div>
+  </div>
+
+  <div class="hero">
+    <h1>Working proxies,<br><span>unlimited.</span></h1>
+    <p>Activate a key, then pull as many live Indian proxies as you need — for 20 full minutes.</p>
+  </div>
+
+  <div class="card" id="statusCard">
+    <div class="card-title"><span class="ico">STATUS</span> Session</div>
+    <div class="status-row">
+      <div class="ring">
+        <svg width="74" height="74" viewBox="0 0 74 74">
+          <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs>
+          <circle class="track" cx="37" cy="37" r="30"></circle>
+          <circle class="prog" id="ringProg" cx="37" cy="37" r="30"></circle>
+        </svg>
+        <div class="ring-label"><div><b id="ringTime">--:--</b><small id="ringUnit">REMAINING</small></div></div>
+      </div>
+      <div class="status-info">
+        <div class="badge dead" id="statusBadge"><span class="pulse"></span><span id="statusText">INACTIVE</span></div>
+        <div class="key-str" id="statusKey">No active key</div>
+        <div class="hint" id="statusHint">Create a key in the bot, then apply it below.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="activateCard">
+    <div class="card-title"><span class="ico">KEY</span> Activate Access</div>
+    <label class="field-label">Key from Telegram bot</label>
+    <input class="input" id="keyInput" placeholder="A7K2M9QX4PL8" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="13">
+    <button class="btn btn-primary" id="applyBtn">Activate Key</button>
+    <div class="scan" id="applyScan"><i></i></div>
+  </div>
+
+  <div class="card hidden" id="genCard">
+    <div class="card-title"><span class="ico">GEN</span> Proxy Generator</div>
+    <label class="field-label">Protocol</label>
+    <div class="chips" id="protoChips">
+      <div class="chip active" data-p="all">ALL</div>
+      <div class="chip" data-p="http">HTTP</div>
+      <div class="chip" data-p="https">HTTPS</div>
+      <div class="chip" data-p="socks4">SOCKS4</div>
+      <div class="chip" data-p="socks5">SOCKS5</div>
+    </div>
+    <div class="range-head"><label class="field-label" style="margin:0">Quantity</label><span class="val" id="countVal">10</span></div>
+    <input type="range" id="countRange" min="1" max="10" value="10">
+    <button class="btn btn-primary" id="genBtn">Generate Working Proxies</button>
+    <div class="scan" id="genScan"><i></i></div>
+  </div>
+
+  <div id="resultsWrap" class="hidden">
+    <div class="proxy-head"><h2>Proxies</h2><button class="copy-all" id="copyAll">Copy working</button></div>
+    <div id="proxyList"></div>
+  </div>
+
+  <div class="footer">FluxProxy · Free forever · India</div>
+</div>
+
+<div id="toast"><div class="toast-inner" id="toastText"></div></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const tg = window.Telegram && Telegram.WebApp ? Telegram.WebApp : null;
+  const initData = tg ? tg.initData : "";
+
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    try { tg.setHeaderColor("#080b14"); tg.setBackgroundColor("#080b14"); } catch (e) {}
+  }
+
+  let state = null;
+  let protocol = "all";
+  let toastTimer = null;
+  let tickTimer = null;
+  const RING = 2 * Math.PI * 30;
+
+  // Backend URL for /api/* requests.
+  // Static hosts (Netlify): replace __FLUX_API_BASE__ with your public
+  // FastAPI URL, e.g. "https://flux-api.onrender.com".
+  // You can also override it with ?api=https://... or localStorage "flux_api".
+  const API_BASE = (
+    new URLSearchParams(location.search).get("api") ||
+    localStorage.getItem("flux_api") ||
+    "__FLUX_API_BASE__"
+  ).replace(/\/+$/, "");
+
+  const MSG = {
+    sessionError: "No Telegram session found. Open the Mini App from the button inside the bot - not from a browser link.",
+    noKeyInput: "Enter your key first.",
+    activated: "Key activated.",
+    noWorking: "No working proxies right now. Free proxies rotate constantly - tap Generate again in a moment.",
+    copied: "Copied.",
+    nothingToCopy: "Nothing to copy yet.",
+    expired: "Key expired. Generate a new one in the bot.",
+    scanning: "Verifying live proxies... this can take up to a minute.",
+    noKey: "No active key. Generate one in the bot and apply it here."
+  };
+
+  function haptic(type) { try { tg && tg.HapticFeedback.impactOccurred(type || "light"); } catch (e) {} }
+  function toast(msg, ms) {
+    $("toastText").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("show"), ms || 2400);
+  }
+  function busy(btn, scanId, on) {
+    btn.disabled = on;
+    $(scanId).classList.toggle("on", on);
+    if (on) { btn.dataset.old = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span>&nbsp;Working...'; }
+    else if (btn.dataset.old) { btn.innerHTML = btn.dataset.old; }
+  }
+  async function api(path, body) {
+    let res;
+    try {
+      res = await fetch(API_BASE + path, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(Object.assign({init_data: initData}, body || {}))
+      });
+    } catch (e) {
+      throw new Error("Cannot reach the API server. Check the backend URL.");
+    }
+    const json = await res.json().catch(() => null);
+    if (!json) {
+      throw new Error("API returned an invalid response (HTTP " + res.status + ").");
+    }
+    if (!res.ok || !json.ok) throw new Error(json.error || "Request failed");
+    return json.data;
+  }
+  async function copy(text, msg) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {
+      const t = document.createElement("textarea");
+      t.value = text; document.body.appendChild(t); t.select();
+      try { document.execCommand("copy"); } catch (_) {}
+      t.remove();
+    }
+    haptic("success"); toast(msg || MSG.copied);
+  }
+  function fmt(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  function render(s) {
+    state = s;
+    const k = s.key;
+    if (k) {
+      $("statusBadge").className = "badge live";
+      $("statusText").textContent = "KEY ACTIVE";
+      $("statusKey").textContent = k.key;
+      $("statusHint").textContent = "Timer is running. Generate unlimited proxies now.";
+      $("activateCard").classList.add("hidden");
+      $("genCard").classList.remove("hidden");
+      startTick(k.expires_at, s.server_time);
+    } else {
+      $("statusBadge").className = "badge dead";
+      $("statusText").textContent = "INACTIVE";
+      $("statusKey").textContent = "No active key";
+      $("statusHint").textContent = MSG.noKey;
+      $("activateCard").classList.remove("hidden");
+      $("genCard").classList.add("hidden");
+      $("resultsWrap").classList.add("hidden");
+      stopTick();
+      $("ringTime").textContent = "--:--";
+      $("ringUnit").textContent = "REMAINING";
+      $("ringProg").style.strokeDashoffset = RING;
+    }
+  }
+
+  function tick(expires, serverNow, duration) {
+    const offset = serverNow - Math.floor(Date.now() / 1000);
+    function update() {
+      const left = Math.max(0, expires - (Math.floor(Date.now() / 1000) + offset));
+      $("ringTime").textContent = fmt(left);
+      const frac = Math.min(1, left / (duration * 60));
+      $("ringProg").style.strokeDasharray = RING;
+      $("ringProg").style.strokeDashoffset = RING * (1 - frac);
+      if (left === 0) {
+        stopTick();
+        toast(MSG.expired, 4000);
+        render(Object.assign({}, state, {key: null}));
+      }
+    }
+    stopTick();
+    update();
+    tickTimer = setInterval(update, 1000);
+  }
+  function startTick(expires, serverNow) { tick(expires, serverNow, state.key_duration_minutes || 20); }
+  function stopTick() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } }
+
+  function fmtSpeed(kbps) {
+    if (!kbps) return "n/a";
+    if (kbps >= 1024) return (kbps / 1024).toFixed(2) + " MB/s";
+    if (kbps >= 1) return Math.round(kbps) + " KB/s";
+    return "<1 KB/s";
+  }
+
+  // Projected data volume for one hour of continuous use.
+  function fmtAmt(mb) {
+    if (!mb || mb <= 0) return "n/a";
+    if (mb >= 1024) return (mb / 1024).toFixed(2) + " GB";
+    if (mb >= 1) return Math.round(mb) + " MB";
+    return "<1 MB";
+  }
+  function fmtVolume(mb) { return fmtAmt(mb) + "/h"; }
+  function fmtSession(kbps) { return fmtAmt((kbps || 0) * 1200 / 1024) + "/20min"; }
+
+  function renderProxies(list) {
+    const host = $("proxyList");
+    host.innerHTML = "";
+    // Only working proxies are ever shown — dead ones are filtered out.
+    const working = (list || []).filter(p => p.alive);
+    if (!working.length) {
+      host.innerHTML = '<div class="empty"><div class="big">NO RESULTS</div>' + MSG.noWorking + '</div>';
+      return;
+    }
+    working.forEach((p, i) => {
+      const live = !!p.alive;
+      const div = document.createElement("div");
+      div.className = "proxy-item" + (live ? " live" : "");
+      div.style.animationDelay = (i * 0.025) + "s";
+      const proto = (p.protocol || "http").toLowerCase();
+      const tier = (p.tier || "OK").toLowerCase();
+      const state = live
+        ? '<span class="p-state working">WORKING</span>'
+        : '<span class="p-state dead">DEAD</span>';
+      const meta = live
+        ? '<span class="tier ' + tier + '">' + (p.tier || "OK") + '</span>' +
+          fmtSpeed(p.speed_kbps) + ' · ' + fmtVolume(p.transfer_1h_mb) +
+          ' · ' + fmtSession(p.speed_kbps) +
+          ' · ' + (p.test_latency ? p.test_latency + "s" : "fast")
+        : (p.provider_status && p.provider_status !== "alive"
+            ? p.provider_status
+            : "not responding") +
+          (p.uptime_24h ? ' · ' + Math.round(p.uptime_24h) + "% uptime" : '') +
+          ' · India';
+      div.innerHTML =
+        '<span class="proto ' + proto + '">' + proto + '</span>' +
+        '<div class="p-main"><div class="p-addr">' + p.address + '</div>' +
+        '<div class="p-meta">' + meta + '</div></div>' +
+        state +
+        '<button class="p-copy" title="Copy"' + (live ? '' : ' disabled style="opacity:.3"') + '>COPY</button>';
+      if (live) {
+        div.querySelector(".p-copy").onclick = () => copy(p.url, "Proxy copied.");
+      }
+      host.appendChild(div);
+    });
+    $("resultsWrap").classList.remove("hidden");
+  }
+
+  $("applyBtn").onclick = async () => {
+    const key = $("keyInput").value.trim();
+    if (!key) { toast(MSG.noKeyInput); return; }
+    const btn = $("applyBtn");
+    busy(btn, "applyScan", true);
+    try {
+      const d = await api("/api/key/apply", {key: key});
+      haptic("success");
+      toast(d.message || MSG.activated, 4500);
+      $("keyInput").value = "";
+      render(d.session);
+    } catch (e) { haptic("error"); toast(e.message, 4000); }
+    finally { busy(btn, "applyScan", false); }
+  };
+
+  function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+  $("genBtn").onclick = async () => {
+    const btn = $("genBtn");
+    busy(btn, "genScan", true);
+    const requested = parseInt($("countRange").value, 10);
+    toast(MSG.scanning, 120000);
+    try {
+      let d = await api("/api/proxies", {
+        protocol: protocol,
+        count: requested
+      });
+      let jobId = d.job_id;
+      while (!d.done && jobId) {
+        await sleep(1200);
+        d = await api("/api/proxies/result", {job_id: jobId});
+      }
+      if (!d.done) throw new Error("Generation is taking longer than expected. Try again.");
+      haptic("success");
+      const working = (d.proxies || []).filter(p => p.alive);
+      renderProxies(working);
+      if (d.session) render(d.session);
+      if (working.length) {
+        const short = working.length < requested
+          ? " of " + requested + " requested"
+          : "";
+        toast(working.length + " working proxies" + short +
+              " ready — also sent to your bot chat.", 5500);
+      } else {
+        toast(MSG.noWorking, 6000);
+      }
+    } catch (e) { haptic("error"); toast(e.message, 5000); }
+    finally { busy(btn, "genScan", false); }
+  };
+
+  $("copyAll").onclick = () => {
+    const lines = Array.from(document.querySelectorAll(".proxy-item.live .p-addr")).map(n => n.textContent);
+    if (!lines.length) { toast("No working proxies to copy."); return; }
+    copy(lines.join("\n"), lines.length + " working proxies copied.");
+  };
+
+  $("countRange").oninput = (e) => $("countVal").textContent = e.target.value;
+
+  document.querySelectorAll("#protoChips .chip").forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll("#protoChips .chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      protocol = chip.dataset.p;
+      haptic("selection");
+    };
+  });
+
+  async function boot() {
+    if (!initData) {
+      toast(MSG.sessionError, 8000);
+      $("statusHint").textContent = MSG.sessionError;
+      return;
+    }
+    if (API_BASE.indexOf("__FLUX_API_BASE__") !== -1) {
+      toast("Set the backend URL in index.html before deploying.", 6000);
+    }
+    try { render(await api("/api/session", {})); }
+    catch (e) {
+      toast(MSG.sessionError, 5000);
+      $("statusHint").textContent = MSG.sessionError;
+    }
+  }
+  boot();
+  setInterval(async () => {
+    if (!state || !state.key) return;
+    try { const s = await api("/api/status", {}); if (s.key) render(s); } catch (e) {}
+  }, 10000);
+})();
+</script>
+</body>
+</html>
