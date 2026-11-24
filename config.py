@@ -17,7 +17,7 @@ BOT_USERNAME: str = os.getenv("BOT_USERNAME", "Amazondeleu_bot")
 _url_file = Path(__file__).parent / "webapp_url.txt"
 _dynamic_url = _url_file.read_text(encoding="utf-8").strip() if _url_file.exists() else ""
 WEBAPP_URL: str = (
-    _dynamic_url or os.getenv("WEBAPP_URL", "https://fluxproxy.netlify.app")
+    _dynamic_url or os.getenv("WEBAPP_URL", "viedietlinks-production.up.railway.app")
 ).rstrip("/")
 
 # Public HTTPS URL of the FastAPI backend (where /api/* is served).
