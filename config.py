@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Telegram
-BOT_TOKEN: str = os.getenv("BOT_TOKEN", "8649653861:AAHAfoCSvqxkuGAAMpq3VmKJmOO-zbJzTU8")
-BOT_USERNAME: str = os.getenv("BOT_USERNAME", "Amazondeleu_bot")
+BOT_TOKEN: str = os.getenv("BOT_TOKEN", "")
+BOT_USERNAME: str = os.getenv("BOT_USERNAME", "FluxProxyBot")
 
 # Public HTTPS URL of the Mini App (this FastAPI server).
 # tunnel.py writes webapp_url.txt automatically; it takes priority.
